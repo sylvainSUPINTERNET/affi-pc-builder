@@ -43,4 +43,7 @@ import { waitForEnter } from './utils';
 
     // 1 sur 2 = lien de la page produit
     // document.querySelectorAll('a.a-link-normal.s-underline-text.s-underline-link-text.s-link-style.a-text-normal');
+
+    // when click on link : to get image 
+    // document.querySelector('img[data-a-image-name=landingImage]')
 })()
