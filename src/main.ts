@@ -11,8 +11,9 @@ import { waitForEnter } from './utils';
 
     const chromeExecPath = `C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe`;
 
-    const browser = await puppeteer.launch({executablePath: chromeExecPath, headless: false}); // headless: "new"
+    const browser = await puppeteer.launch({executablePath: chromeExecPath, headless: false,
         
+         userDataDir: "C:\\Users\\Sylvain\\AppData\\Local\\Google\\Chrome\\User Data" }); // headless: "new"
     const page = await browser.newPage();
 
     // Without this header for some reason google will not let you enter the password and detect browser as insecure
@@ -21,25 +22,29 @@ import { waitForEnter } from './utils';
     });
 
 
-    await page.goto('https://www.amazon.com/');
+    await page.goto('https://partenaires.amazon.fr/', {waitUntil: 'networkidle2'}); // connect to affiliate account
 
     await waitForEnter(); // should see on browser captcha ... + need to login manually with OTP for 2FA ( marketing account ) 
 
     console.log("Continue ...")
+
+    await page.goto('https://www.amazon.com/');
+
 
     const input = await page.$('#twotabsearchtextbox')
     await input?.type('RTX 4080')
 
     const searchButton = await page.$('#nav-search-submit-button')
     await searchButton?.click()
- 
 
+
+    // get the link
+     // document.querySelector('#amzn-ss-text-link > span > strong > a').click()
     // document.querySelector('#amzn-ss-text-shortlink-textarea').innerHTML
 
-    // document.querySelector('#amzn-ss-text-link > span > strong > a').click()
 
 
-    // document.querySelectorAll('.sg-col-inner') ( 4 to 20 )
+    // document.querySelectorAll('.sg-col-inner') ( 5 to 20 )
 
     // 1 sur 2 = lien de la page produit
     // document.querySelectorAll('a.a-link-normal.s-underline-text.s-underline-link-text.s-link-style.a-text-normal');
