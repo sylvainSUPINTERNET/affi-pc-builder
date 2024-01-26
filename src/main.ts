@@ -37,80 +37,60 @@ let timeout = (milliseconds: number) => new Promise(r => setTimeout(r, milliseco
     await page.waitForSelector('#s-result-sort-select');
     await page.select('#s-result-sort-select', 'exact-aware-popularity-rank');
 
-    
-
-    await page.waitForSelector('.s-main-slot.s-result-list.s-search-results.sg-row');
-
-    // get each element
-    const elements = await page.$$('.s-main-slot.s-result-list.s-search-results.sg-row');
-
-
-    await page.waitForSelector('div[data-asin]:not([data-asin=""])');
     // get list item 
+    await page.waitForSelector('.s-main-slot.s-result-list.s-search-results.sg-row');
+    await page.waitForSelector('div[data-asin]:not([data-asin=""])');
     const items = await page.$$('div[data-asin]:not([data-asin=""])');
     
     // create link of link from list of items ( 1 on 2 is the link of the product the 2 is price)
-    const links = await page.$$('a.a-link-normal.s-underline-text.s-underline-link-text.s-link-style.a-text-normal');
-
-    let itemsAnalyzed:{ "name": string, "image":string, "affiliationLink": string }[] = [];
-
-    if ( links.length > 0 ) {
-
-        links.forEach( async (link, i) => {
-            const saveItem = {};
-
-            if ( i % 2 !== 0 ) {                
-                // visit link
-                console.log(link);
-                await link?.click();
-    
-                // Product name
-                await page.waitForSelector('#productTitle');
-                const name = await page.$eval('#productTitle', (el) => el.innerHTML) as string;
-    
-                // Product image 
-                await page.waitForSelector('img[data-a-image-name=landingImage]');
-                const image = await page.$eval('img[data-a-image-name=landingImage]', (el) => el.getAttribute('src')) as string;
-                
-                // Generate link
-                await page.waitForSelector('#amzn-ss-text-link > span > strong > a');
-                const links = await page.$$('a[title="Text"]');
-                await links[0].click();
-                await page.waitForSelector('#amzn-ss-text-shortlink-textarea');
-                const affiliationLink = await page.$eval('#amzn-ss-text-shortlink-textarea', (el) => el.innerHTML) as string;
-                
-                console.log("Item : ", name);
-                console.log("Image : ", image);
-                console.log("Link generated : ", affiliationLink);
-                console.log("\n");
-                await timeout(5000);
-                itemsAnalyzed = [...itemsAnalyzed, {
-                    name,
-                    image,
-                    affiliationLink
-                }];
-            }
-        
+    let links = await page.$$('a.a-link-normal.s-underline-text.s-underline-link-text.s-link-style.a-text-normal');
+    let hrefs = await Promise.all(
+        links.map(async (link) => {
+            return page.evaluate(el => el.href, link);
         })
-
-    } else {
-        console.log("No items found ...");
-    }
-
+    );
     
 
-  
-    // get the link
-     // document.querySelector('#amzn-ss-text-link > span > strong > a').click()
-    // document.querySelector('#amzn-ss-text-shortlink-textarea').innerHTML
+    let count = 0;
+    const THRESHOLD_ITEM=3;
+    let itemsAnalyzed:{ "name": string, "image":string, "affiliationLink": string }[] = [];
+    console.log("Links to visit: ", Math.floor((hrefs.length / 2)), " keep only ", THRESHOLD_ITEM);
 
+    let i=0;
+    // do not use forEach, will use 1 generator / 1 method. So not working as you think
+    for (const href of hrefs) {
 
+        if ( count === THRESHOLD_ITEM) {
+            break;
+        }
 
-    // document.querySelectorAll('.sg-col-inner') ( 5 to 20 )
+        i++;
+        console.log(i);
+        if ( i%2 !== 0 ) {
+            await page.goto(href);
+            await page.waitForSelector('#productTitle');
+            const name = await page.$eval('#productTitle', (el) => el.innerHTML) as string;
+            await page.waitForSelector('img[data-a-image-name=landingImage]');
+            const image = await page.$eval('img[data-a-image-name=landingImage]', (el) => el.getAttribute('src')) as string;
+            await page.waitForSelector('#amzn-ss-text-link > span > strong > a');
+            const links2 = await page.$$('a[title="Text"]');
+            await links2[0].click();
+            await page.waitForSelector('#amzn-ss-text-shortlink-textarea');
+            const affiliationLink = await page.$eval('#amzn-ss-text-shortlink-textarea', (el) => el.innerHTML) as string;
+            console.log("\n");
+            await timeout(5000);
+            console.log("Name : ", name);
+            console.log("Image : ", image);
+            console.log("Affiliation Link : ", affiliationLink);
+            console.log("\n");
+            count++;
+            itemsAnalyzed = [...itemsAnalyzed, {
+                name,
+                image,
+                affiliationLink
+            }];
+        }
+    }
+    
 
-    // 1 sur 2 = lien de la page produit
-    // document.querySelectorAll('a.a-link-normal.s-underline-text.s-underline-link-text.s-link-style.a-text-normal');
-
-    // when click on link : to get image 
-    // document.querySelector('img[data-a-image-name=landingImage]')
 })()
