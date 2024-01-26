@@ -1,13 +1,12 @@
 import axios from "axios";
 import path from "path";
-import fs from "fs";
+import fs from "fs-extra";
 
-export const downloadImage = async ( imgUrl: string ) => {
+export const downloadImage = async ( imgUrl: string, theme:string, imgName:string) => {
 
     let p = new URL(imgUrl).pathname.split("/");
-
-
-    const pathFile = path.join(__dirname, '..', '..', './images/' + p[p.length -1]);
+    fs.ensureDirSync(path.join(__dirname, '..', '..', './images/'+ theme));
+    const pathFile = path.join(__dirname, '..', '..', './images/'+ theme +"/"+ imgName+"@"+ p[p.length -1]);
 
     console.log("Write to ", pathFile);
 

@@ -1,21 +1,15 @@
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
-import readline from 'readline';
-import { timeout, waitForEnter } from './utils';
-
-import axios from "axios";
-import fs from "fs";
-import path from "path";
+import { timeout } from './utils';
 import { downloadImage } from './service/download';
-
-
-
 
 ( async () => {
 
     puppeteer.use(StealthPlugin());
 
-    const search = "RTX 4080"
+    const search:string = "RTX 4080"
+    const type:"GPU" | "CPU" | "MOB" | "RAM" | "SSD" | "HDD" | "M.2" | "ALIM" | "BOX" | "COOLER" | "THERMAL_PASTE" = "GPU"
+    
 
     //chrome --remote-debugging-port=9222 
     // will use current profile / instance of chrome ( so no setup operation required login etc ... )
@@ -59,7 +53,7 @@ import { downloadImage } from './service/download';
 
     let count = 0;
     const THRESHOLD_ITEM=3;
-    let itemsAnalyzed:{ "name": string, "image":string, "affiliationLink": string }[] = [];
+    let itemsAnalyzed:{ "name": string, "image":string, "affiliationLink": string, "type": "GPU" | "CPU" | "MOB" | "RAM" | "SSD" | "HDD" | "M.2" | "ALIM" | "BOX" | "COOLER" | "THERMAL_PASTE" }[] = [];
     console.log("Links to visit: ", Math.floor((hrefs.length / 2)), " keep only ", THRESHOLD_ITEM);
 
     let i=0;
@@ -84,14 +78,13 @@ import { downloadImage } from './service/download';
             const image = await page.$eval('img[data-a-image-name=landingImage]', (el) => el.getAttribute('src')) as string;
             console.log("Found img : ", image);
 
-            console.log("Donwload image ...")
-            try {
-                await downloadImage(image);
-                console.log("Download with success")
-            } catch ( e ) {
-
-                console.log("Error during download : ", e)
-            }
+            // console.log("Donwload image ...")
+            // try {
+            //     await downloadImage(image, theme, name);
+            //     console.log("Download with success")
+            // } catch ( e ) {
+            //     console.log("Error during download : ", e)
+            // }
 
 
             await page.waitForSelector('a[title="Text"]');
@@ -105,17 +98,16 @@ import { downloadImage } from './service/download';
             itemsAnalyzed = [...itemsAnalyzed, {
                 name,
                 image,
-                affiliationLink
+                affiliationLink,
+                type
             }];
 
             console.log({
                 name,
                 image,
-                affiliationLink
+                affiliationLink,
+                type
             });
-
-
-
             console.log("\n");
 
         }
