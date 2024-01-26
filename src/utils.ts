@@ -14,3 +14,5 @@ export function waitForEnter() {
         });
     });
 }
+
+export let timeout = (milliseconds: number) => new Promise(r => setTimeout(r, milliseconds));

@@ -1,15 +1,21 @@
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import readline from 'readline';
-import { waitForEnter } from './utils';
+import { timeout, waitForEnter } from './utils';
+
+import axios from "axios";
+import fs from "fs";
+import path from "path";
+import { downloadImage } from './service/download';
 
 
-let timeout = (milliseconds: number) => new Promise(r => setTimeout(r, milliseconds));
 
 
 ( async () => {
 
     puppeteer.use(StealthPlugin());
+
+    const search = "RTX 4080"
 
     //chrome --remote-debugging-port=9222 
     // will use current profile / instance of chrome ( so no setup operation required login etc ... )
@@ -27,7 +33,7 @@ let timeout = (milliseconds: number) => new Promise(r => setTimeout(r, milliseco
 
     // typing in search bar
     const input = await page.$('#twotabsearchtextbox')
-    await input?.type('RTX 4080')
+    await input?.type(`${search}`)
 
     // search
     const searchButton = await page.$('#nav-search-submit-button')
@@ -61,34 +67,57 @@ let timeout = (milliseconds: number) => new Promise(r => setTimeout(r, milliseco
     for (const href of hrefs) {
 
         if ( count === THRESHOLD_ITEM) {
+
+            console.log("Threshold reached, stoping search affiliate link for : ", search);
             break;
         }
 
         i++;
-        console.log(i);
         if ( i%2 !== 0 ) {
+
             await page.goto(href);
             await page.waitForSelector('#productTitle');
             const name = await page.$eval('#productTitle', (el) => el.innerHTML) as string;
+            console.log("Found name : ", name);
+
             await page.waitForSelector('img[data-a-image-name=landingImage]');
             const image = await page.$eval('img[data-a-image-name=landingImage]', (el) => el.getAttribute('src')) as string;
-            await page.waitForSelector('#amzn-ss-text-link > span > strong > a');
-            const links2 = await page.$$('a[title="Text"]');
-            await links2[0].click();
+            console.log("Found img : ", image);
+
+            console.log("Donwload image ...")
+            try {
+                await downloadImage(image);
+                console.log("Download with success")
+            } catch ( e ) {
+
+                console.log("Error during download : ", e)
+            }
+
+
+            await page.waitForSelector('a[title="Text"]');
+            await page.click('a[title="Text"]');
             await page.waitForSelector('#amzn-ss-text-shortlink-textarea');
+            await timeout(2000);
             const affiliationLink = await page.$eval('#amzn-ss-text-shortlink-textarea', (el) => el.innerHTML) as string;
-            console.log("\n");
-            await timeout(5000);
-            console.log("Name : ", name);
-            console.log("Image : ", image);
-            console.log("Affiliation Link : ", affiliationLink);
-            console.log("\n");
+            console.log("Found affiliation link : ", affiliationLink);
+
             count++;
             itemsAnalyzed = [...itemsAnalyzed, {
                 name,
                 image,
                 affiliationLink
             }];
+
+            console.log({
+                name,
+                image,
+                affiliationLink
+            });
+
+
+
+            console.log("\n");
+
         }
     }
     
